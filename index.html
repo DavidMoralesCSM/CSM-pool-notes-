@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CSM Tools — GoTo</title>
+<style>
+
+/* ============================================
+   GLOBAL
+   ============================================ */
+*, *::before, *::after { box-sizing: border-box; }
+
+:root {
+    --goto-yellow: #FFE900;
+    --goto-black: #000000;
+    --goto-white: #FFFFFF;
+    --bg-light: #f3f5f7;
+    --card-light: #ffffff;
+    --text-light: #0b0f14;
+    --muted-light: #5a6b7a;
+    --border-light: #d9e1ea;
+    --focus-light: rgba(255,233,0,.35);
+    --bg-dark: #121212;
+    --card-dark: #1E1E1E;
+    --text-dark: #FFCC00;
+    --border-dark: rgba(255,204,0,0.4);
+}
+
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; transition: background 0.3s ease; }
+
+/* ============================================
+   DARK / LIGHT MODE TOGGLE
+   ============================================ */
+.theme-toggle {
+    position: fixed;
+    top: 16px;
+    right: 20px;
+    z-index: 9999;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 50px;
+    padding: 6px 14px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    backdrop-filter: blur(8px);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.theme-toggle:hover { background: rgba(255,255,255,0.25); transform: scale(1.05); }
+
+body.light-mode .theme-toggle {
+    background: rgba(0,0,0,0.08);
+    border-color: rgba(0,0,0,0.15);
+    color: #333;
+}
+
+/* ============================================
+   TOAST NOTIFICATIONS
+   ============================================ */
+.toast-container {
+    position: fixed;
+    bottom: 28px;
+    right: 24px;
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+.toast-msg {
+    background: #1A1A1A;
+    color: #FFCC00;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    border-left: 4px solid #FFCC00;
+    animation: toastIn 0.3s ease forwards;
+    pointer-events: none;
+    max-width: 320px;
+}
+.toast-msg.success { border-left-color: #00c853; color: #00c853; background: #0a1a0f; }
+.toast-msg.error   { border-left-color: #ff4444; color: #ff4444; background: #1a0a0a; }
+.toast-msg.info    { border-left-color: #FFCC00; color: #FFCC00; background: #1a1a00; }
+
+@keyframes toastIn {
+    from { opacity: 0; transform: translateX(40px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes toastOut {
+    from { opacity: 1; transform: translateX(0); }
+    to   { opacity: 0; transform: translateX(40px); }
+}
+
+body.light-mode .toast-msg       { background: #fff; color: #333; border-left-color: #e6b800; }
+body.light-mode .toast-msg.success { background: #f0fff4; color: #00a040; border-left-color: #00a040; }
+body.light-mode .toast-msg.error   { background: #fff0f0; color: #cc0000; border-left-color: #cc0000; }
+
+/* ============================================
+   RIPPLE EFFECT
+   ============================================ */
+.ripple-btn { position: relative; overflow: hidden; }
+.ripple-btn .ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.35);
+    transform: scale(0);
+    animation: rippleAnim 0.55s linear;
+    pointer-events: none;
+}
+@keyframes rippleAnim {
+    to { transform: scale(4); opacity: 0; }
+}
+
+/* ============================================
+   SELECTOR SCREEN
+   ============================================ */
+#selectorScreen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background-color: #121212;
+    transition: background 0.3s ease;
+}
+body.light-mode #selectorScreen { background-color: #f3f5f7; }
+
+#selectorScreen img { margin-bottom: 30px; }
+
+#selectorScreen h1 {
+    color: #FFCC00;
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    text-align: center;
+}
+body.light-mode #selectorScreen h1 { color: #1A1A1A; }
+
+#selectorScreen p {
+    color: rgba(255,255,255,0.6);
+    font-size: 15px;
+    margin-bottom: 40px;
+    text-align: center;
+}
+body.light-mode #selectorScreen p { color: rgba(0,0,0,0.5); }
+
+.team-buttons { display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; }
+
+.team-btn {
+    padding: 20px 48px;
+    font-size: 22px;
+    font-weight: 700;
+    border: none;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    letter-spacing: 1px;
+    font-family: inherit;
+}
+.team-btn:hover { transform: scale(1.04); }
+.team-btn:active { transform: scale(0.98); }
+
+.team-btn.pool {
+    background: linear-gradient(180deg, #FFCC00, #e6b800);
+    color: #1A1A1A;
+    box-shadow: 0 4px 20px rgba(255,204,0,0.4);
+    animation: pulseGlowPool 2.5s ease-in-out infinite;
+}
+@keyframes pulseGlowPool {
+    0%, 100% { box-shadow: 0 4px 20px rgba(255,204,0,0.4); }
+    50%       { box-shadow: 0 4px 36px rgba(255,204,0,0.75); }
+}
+
+.team-btn.ucc {
+    background: #1E1E1E;
+    color: #FFCC00;
+    border: 2px solid rgba(255,204,0,0.5);
+    animation: pulseGlowUCC 2.5s ease-in-out infinite;
+}
+@keyframes pulseGlowUCC {
+    0%, 100% { box-shadow: 0 4px 20px rgba(255,204,0,0.15); }
+    50%       { box-shadow: 0 4px 36px rgba(255,204,0,0.45); }
+}
+body.light-mode .team-btn.ucc { background: #fff; color: #1A1A1A; border-color: rgba(0,0,0,0.2); }
+
+.back-btn {
+    margin: 20px auto 0;
+    display: block;
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,0.4);
+    font-size: 13px;
+    cursor: pointer;
+    text-decoration: underline;
+    font-family: inherit;
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+.back-btn:hover { color: #FFCC00; transform: scale(1.04); }
+body.light-mode .back-btn { color: rgba(0,0,0,0.4); }
+body.light-mode .back-btn:hover { color: #1A1A1A; }
+
+/* ============================================
+   FADE IN
+   ============================================ */
+.fade-in {
+    animation: fadeInAnim 0.35s ease forwards;
+}
+@keyframes fadeInAnim {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================
+   POOL STYLES
+   ============================================ */
+#poolApp { display: none; background-color: #121212; min-height: 100vh; transition: background 0.3s ease; }
+body.light-mode #poolApp { background-color: #f3f5f7; }
+
+.pool-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 30px;
+    background: linear-gradient(180deg, #1A1A1A 0%, #111 100%);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    transition: background 0.3s ease;
+}
+body.light-mode .pool-header { background: linear-gradient(180deg, #fff 0%, #f0f0f0 100%); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+
+.pool-header h1 { margin: 0; font-size: 26px; font-weight: 600; color: #FFCC00; }
+body.light-mode .pool-header h1 { color: #1A1A1A; }
+
+.pool-divider { border-bottom: 1px solid rgba(255,204,0,0.4); }
+body.light-mode .pool-divider { border-bottom: 1px solid rgba(0,0,0,0.1); }
+
+.pool-form {
+    max-width: 650px;
+    margin: 40px auto;
+    background-color: #1E1E1E;
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    transition: background 0.3s ease;
+}
+body.light-mode .pool-form { background-color: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+
+.pool-form label { display: block; margin-top: 20px; font-weight: 600; color: #FFCC00; font-size: 15px; }
+body.light-mode .pool-form label { color: #1A1A1A; }
+
+.pool-form select,
+.pool-form input,
+.pool-form textarea {
+    width: 100%; padding: 12px; margin-top: 8px; box-sizing: border-box;
+    border: 1px solid rgba(255,204,0,0.4); border-radius: 12px;
+    background-color: #2A2A2A; color: #FFCC00; font-size: 15px;
+    transition: all 0.25s ease; font-family: inherit;
+}
+body.light-mode .pool-form select,
+body.light-mode .pool-form input,
+body.light-mode .pool-form textarea {
+    background-color: #fff; color: #1A1A1A;
+    border-color: rgba(0,0,0,0.2);
+}
+.pool-form select:focus,
+.pool-form input:focus,
+.pool-form textarea:focus {
+    outline: none; border: 1px solid #FFCC00;
+    background-color: #262626; box-shadow: 0 0 10px rgba(255,204,0,0.3);
+}
+body.light-mode .pool-form select:focus,
+body.light-mode .pool-form input:focus,
+body.light-mode .pool-form textarea:focus {
+    background-color: #fffde7; border-color: #e6b800;
+    box-shadow: 0 0 10px rgba(255,204,0,0.2);
+}
+.pool-form textarea { height: 90px; resize: vertical; }
+
+.pool-form button {
+    margin-top: 25px; padding: 12px 20px; font-weight: 600;
+    font-size: 15px; border: none; border-radius: 12px; cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.2s ease;
+    font-family: inherit;
+}
+.pool-form button:hover { transform: scale(1.03); }
+
+.btn-copy { background: linear-gradient(180deg,#FFCC00,#e6b800); color: #1A1A1A; box-shadow: 0 4px 12px rgba(255,204,0,0.4); }
+.btn-copy:hover { box-shadow: 0 6px 18px rgba(255,204,0,0.55); }
+.btn-clear-pool { background-color: #2A2A2A; color: #FFCC00; margin-left: 12px; border: 1px solid rgba(255,204,0,0.4) !important; }
+body.light-mode .btn-clear-pool { background-color: #f0f0f0; color: #1A1A1A; border-color: rgba(0,0,0,0.2) !important; }
+
+.info-icon {
+    display: inline-block; width: 18px; height: 18px; line-height: 18px;
+    text-align: center; border-radius: 50%; background: #FFCC00; color: #1A1A1A;
+    font-size: 12px; font-weight: bold; text-decoration: none; margin-left: 8px;
+    cursor: pointer; vertical-align: middle; transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.info-icon:hover { background: #FFD633; box-shadow: 0 0 8px rgba(255,204,0,0.6); transform: scale(1.15); }
+
+.project-label-wrapper { display: flex; align-items: center; margin-top: 20px; }
+.project-label-wrapper label { margin-top: 0; }
+
+.pool-sf-section { max-width: 650px; margin: 20px auto; padding: 0 30px 40px; }
+.pool-sf-section h3 { color: #FFCC00; }
+body.light-mode .pool-sf-section h3 { color: #1A1A1A; }
+.pool-sf-section hr { border-color: rgba(255,204,0,0.4); }
+body.light-mode .pool-sf-section hr { border-color: rgba(0,0,0,0.1); }
+
+.pool-sf-section input {
+    width: 100%; padding: 12px; box-sizing: border-box;
+    border: 1px solid rgba(255,204,0,0.4); border-radius: 12px;
+    background-color: #2A2A2A; color: #FFCC00; font-size: 15px; font-family: inherit;
+    transition: all 0.25s ease;
+}
+body.light-mode .pool-sf-section input { background-color: #fff; color: #1A1A1A; border-color: rgba(0,0,0,0.2); }
+
+.pool-sf-btn {
+    margin-top: 15px; padding: 12px 20px; font-weight: 600; font-size: 15px;
+    border: none; border-radius: 12px; cursor: pointer;
+    background: linear-gradient(180deg,#FFCC00,#e6b800); color: #1A1A1A;
+    box-shadow: 0 4px 12px rgba(255,204,0,0.4); font-family: inherit;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.pool-sf-btn:hover { transform: scale(1.03); box-shadow: 0 6px 18px rgba(255,204,0,0.55); }
+
+.pool-sf-btn-clear {
+    margin-top: 15px; margin-left: 12px; padding: 12px 20px; font-weight: 600;
+    font-size: 15px; border: 1px solid rgba(255,204,0,0.4); border-radius: 12px;
+    cursor: pointer; background-color: #2A2A2A; color: #FFCC00; font-family: inherit;
+    transition: transform 0.15s ease;
+}
+.pool-sf-btn-clear:hover { transform: scale(1.03); }
+body.light-mode .pool-sf-btn-clear { background-color: #f0f0f0; color: #1A1A1A; border-color: rgba(0,0,0,0.2); }
+
+/* ============================================
+   UCC STYLES
+   ============================================ */
+#uccApp { display: none; min-height: 100vh; transition: background 0.3s ease; }
+
+.ucc-body { background: #f3f5f7; color: #0b0f14; transition: background 0.3s ease; }
+body.light-mode .ucc-body { background: #f3f5f7; }
+body:not(.light-mode) #uccApp .ucc-body { background: #121212; color: #FFCC00; }
+
+.ucc-header { background: #000; color: #fff; padding: 18px 20px; border-bottom: 6px solid #FFE900; }
+.ucc-header h1 { margin: 0; font-size: 18px; letter-spacing: .2px; }
+.ucc-header p { margin: 6px 0 0; color: rgba(255,255,255,.85); font-size: 13px; line-height: 1.35; }
+
+.ucc-main {
+    max-width: 1180px; margin: 0 auto; padding: 16px 20px 26px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+.card {
+    background: #fff; border: 1px solid #d9e1ea;
+    border-radius: 14px; padding: 16px;
+    box-shadow: 0 2px 10px rgba(10,20,30,.04);
+    transition: background 0.3s ease, border-color 0.3s ease;
+}
+body:not(.light-mode) #uccApp .card { background: #1E1E1E; border-color: rgba(255,204,0,0.2); }
+
+.ucc-main label { font-size: 12px; color: #5a6b7a; display: block; margin: 10px 0 6px; }
+body:not(.light-mode) #uccApp .ucc-main label { color: rgba(255,204,0,0.7); }
+
+.ucc-main input,
+.ucc-main select,
+.ucc-main textarea {
+    width: 100%; border: 1px solid #d9e1ea; border-radius: 10px;
+    background: #fff; color: #0b0f14; padding: 10px 11px;
+    font-size: 14px; outline: none; font-family: inherit;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+body:not(.light-mode) #uccApp .ucc-main input,
+body:not(.light-mode) #uccApp .ucc-main select,
+body:not(.light-mode) #uccApp .ucc-main textarea {
+    background: #2A2A2A; color: #FFCC00; border-color: rgba(255,204,0,0.3);
+}
+.ucc-main textarea { min-height: 140px; resize: vertical; white-space: pre-wrap; }
+.ucc-main input:focus,
+.ucc-main select:focus,
+.ucc-main textarea:focus { border-color: #000; box-shadow: 0 0 0 4px rgba(255,233,0,.35); }
+
+.ucc-title {
+    margin-top: 10px; font-size: 16px; font-weight: 800; letter-spacing: .2px;
+    padding: 10px 12px; border-radius: 12px;
+    background: linear-gradient(90deg, rgba(255,233,0,.55), rgba(255,233,0,0));
+    border: 1px solid rgba(255,233,0,.55);
+}
+
+.ucc-main button {
+    border: 1px solid #000; background: #000; color: #fff;
+    padding: 10px 12px; border-radius: 10px; font-weight: 700; cursor: pointer;
+    transition: transform 0.15s ease, opacity 0.2s ease; width: auto; font-family: inherit;
+}
+body:not(.light-mode) #uccApp .ucc-main button { border-color: rgba(255,204,0,0.5); background: #2A2A2A; color: #FFCC00; }
+.ucc-main button.secondary { background: #fff; color: #000; }
+body:not(.light-mode) #uccApp .ucc-main button.secondary { background: #1E1E1E; color: #FFCC00; border-color: rgba(255,204,0,0.4); }
+.ucc-main button.ghost { background: transparent; color: #000; }
+body:not(.light-mode) #uccApp .ucc-main button.ghost { color: #FFCC00; }
+.ucc-main button:hover { opacity: .92; transform: scale(1.03); }
+.ucc-main button:active { transform: scale(0.97) translateY(1px); }
+
+.actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+.hint { color: #5a6b7a; font-size: 12px; line-height: 1.35; margin-top: 8px; }
+body:not(.light-mode) #uccApp .hint { color: rgba(255,204,0,0.5); }
+.warn { margin-top: 10px; font-size: 12px; color: #b00020; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+@media (max-width: 920px) {
+    .ucc-main { grid-template-columns: 1fr; }
+}
+
+</style>
+</head>
+<body>
+
+<!-- ✅ THEME TOGGLE -->
+<button class="theme-toggle ripple-btn" onclick="toggleTheme(this)">
+    <span id="themeIcon">☀️</span>
+    <span id="themeLabel">Light Mode</span>
+</button>
+
+<!-- ✅ TOAST CONTAINER -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ============================================
+     SELECTOR SCREEN
+     ============================================ -->
+<div id="selectorScreen">
+    <img src="https://res.cloudinary.com/brandpad/image/upload/c_scale,dpr_auto,f_auto,w_768/v1/13080/goto_logo_wht_yellow" alt="GoTo" height="50">
+    <h1>CSM Tools</h1>
+    <p>Select your team to get started</p>
+    <div class="team-buttons">
+        <button class="team-btn pool ripple-btn" onclick="showTeam('pool', this)">POOL</button>
+        <button class="team-btn ucc ripple-btn" onclick="showTeam('ucc', this)">UCC</button>
+    </div>
+</div>
+
+<!-- ============================================
+     POOL APP
+     ============================================ -->
+<div id="poolApp">
+    <div class="pool-header">
+        <h1>Customer Success Specialist</h1>
+        <div style="display:flex; align-items:center; gap:16px;">
+            <img src="https://res.cloudinary.com/brandpad/image/upload/c_scale,dpr_auto,f_auto,w_768/v1/13080/goto_logo_wht_yellow" alt="GoTo" height="40">
+            <button class="back-btn ripple-btn" onclick="goBack()">← Change Team</button>
+        </div>
+    </div>
+    <div class="pool-divider"></div>
+    <form id="notesForm" class="pool-form fade-in">
+        <label>Attempt Stage:</label>
+        <select data-label="Attempt Stage">
+            <option>1ST ATTEMPT</option>
+            <option>2ND ATTEMPT</option>
+            <option>3RD ATTEMPT</option>
+            <option>4TH ATTEMPT</option>
+            <option>FOLLOW UP</option>
+        </select>
+        <label>Contact Name:</label>
+        <input type="text" data-label="Contact Name">
+        <label>Email:</label>
+        <input type="email" data-label="Email">
+        <label>Phone Number:</label>
+        <input type="tel" data-label="Phone Number">
+        <label>Product:</label>
+        <select data-label="Product">
+            <option>GoToAssist</option>
+            <option>GoToMyPC</option>
+            <option>PRO</option>
+            <option>Central</option>
+            <option>Resolve</option>
+            <option>Rescue</option>
+            <option>Hamachi</option>
+        </select>
+        <label>Recurring Revenue:</label>
+        <input type="text" data-label="Recurring Revenue">
+        <label>Renewal Date:</label>
+        <input type="date" data-label="Renewal Date">
+        <label>Last Usage:</label>
+        <input type="text" data-label="Last Usage">
+        <div class="project-label-wrapper">
+            <label>Project:</label>
+            <a id="projectInfo" href="#" target="_blank" class="info-icon"
+               style="display:none;" title="View project documentation">i</a>
+        </div>
+        <select data-label="Project" id="projectSelect">
+            <option value="">-- Select Project --</option>
+            <option value="cc_churn">CC churn</option>
+            <option value="cl_in_product">Closed Loop - In product</option>
+            <option value="cl_post_purchase">Closed Loop - Post Purchase</option>
+            <option value="awb">AWB</option>
+            <option value="adyen">Adyen Migration</option>
+            <option value="ar_turnoff">AR turn off</option>
+            <option value="rnps">rNPS</option>
+            <option value="tnps">tNPS</option>
+            <option value="inbound">Inbound Request</option>
+            <option value="meeting">Meeting</option>
+        </select>
+        <label>Account Hygiene Internal Admin:</label>
+        <input type="text" data-label="Account Hygiene Internal Admin">
+        <label>Account Hygiene AI/Additional findings:</label>
+        <textarea data-label="AI/Additional findings"></textarea>
+        <label>Contact Outcome/Notes:</label>
+        <textarea data-label="Contact Outcome/Notes"></textarea>
+        <button type="button" class="btn-copy ripple-btn" id="btnPoolCopy" onclick="copyForm(this)">Copy</button>
+        <button type="button" class="btn-clear-pool ripple-btn" onclick="clearForm()">Clear</button>
+    </form>
+    <div class="pool-sf-section fade-in">
+        <hr>
+        <h3>🔗 Salesforce Account Link</h3>
+        <input type="text" id="sfLink" placeholder="Paste Salesforce Account Link Here">
+        <br>
+        <button class="pool-sf-btn ripple-btn" id="btnGenScript" onclick="generateAndCopy(this)">Generate Full Script</button>
+        <button class="pool-sf-btn-clear ripple-btn" onclick="clearLink()">Clear Link</button>
+    </div>
+</div>
+
+<!-- ============================================
+     UCC APP
+     ============================================ -->
+<div id="uccApp">
+    <div class="ucc-body">
+        <div class="ucc-header">
+            <h1>GoTo Note Creator — GS / SF</h1>
+            <p>Selecciona una <b>Task/Template</b> y el formulario se cargará automáticamente. Luego presiona <b>Generar</b> y <b>Copiar</b> para pegar en el CRM (texto plano).</p>
+        </div>
+        <div style="max-width:1180px; margin:0 auto; padding:8px 20px 0; text-align:right;">
+            <button onclick="goBack()"
+                    class="ripple-btn"
+                    style="background:transparent; border:1px solid #d9e1ea; border-radius:8px;
+                           padding:6px 14px; font-size:13px; cursor:pointer; color:#5a6b7a; font-family:inherit;
+                           transition: transform 0.15s ease;">
+                ← Change Team
+            </button>
+        </div>
+        <div class="ucc-main fade-in">
+            <section class="card">
+                <div class="row" style="display:flex; gap:10px; align-items:end; flex-wrap:wrap;">
+                    <div style="flex:1; min-width:240px;">
+                        <label for="taskSelect">Task / Template</label>
+                        <select id="taskSelect"></select>
+                    </div>
+                </div>
+                <div id="templateTitle" class="ucc-title"></div>
+                <div class="hint" id="hint"></div>
+                <form id="formArea" autocomplete="off" style="margin-top:10px;"></form>
+                <div class="actions">
+                    <button type="button" id="btnGenerate" class="ripple-btn">Generar formato</button>
+                    <button type="button" id="btnCopy" class="secondary ripple-btn">Copiar</button>
+                    <button type="button" id="btnClear" class="ghost ripple-btn">Reset</button>
+                </div>
+                <div id="warn" class="warn"></div>
+            </section>
+            <section class="card">
+                <label for="output">Salida (texto plano para CRM)</label>
+                <textarea id="output" spellcheck="false" placeholder="Aquí aparecerá el formato generado..."></textarea>
+                <div class="actions">
+                    <button type="button" id="btnCopyOutput" class="secondary ripple-btn">Copiar</button>
+                    <button type="button" id="btnResetOutput" class="ghost ripple-btn">Reset</button>
+                </div>
+            </section>
+            <section class="card">
+                <h3 style="margin-top:0;">🔗 Salesforce Account Link</h3>
+                <label for="sfLinkUCC">Salesforce Account Link</label>
+                <input type="text" id="sfLinkUCC" placeholder="Paste Salesforce Account Link Here" />
+                <div class="hint">Este link se agregará automáticamente como el último campo del template cuando generes el formato.</div>
+                <div class="actions">
+                    <button type="button" id="btnGeneratePrompt" class="ripple-btn">Generate Full Script</button>
+                    <button type="button" id="btnClearLink" class="ghost ripple-btn">Clear Link</button>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+
+<script>
+/* ============================================
+   TOAST SYSTEM
+   ============================================ */
+function showToast(msg, type = 'info', duration = 2500) {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `toast-msg ${type}`;
+    toast.textContent = msg;
+    container.appendChild(toast);
+    setTimeout(() => {
+        toast.style.animation = 'toastOut 0.3s ease forwards';
+        setTimeout(() => toast.remove(), 300);
+    }, duration);
+}
+
+/* ============================================
+   RIPPLE EFFECT
+   ============================================ */
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.ripple-btn');
+    if (!btn) return;
+    const ripple = document.createElement('span');
+    ripple.className = 'ripple';
+    const rect = btn.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    ripple.style.width = ripple.style.height = size + 'px';
+    ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
+    ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+    btn.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 600);
+});
+
+/* ============================================
+   THEME TOGGLE
+   ============================================ */
+function toggleTheme(btn) {
+    document.body.classList.toggle('light-mode');
+    const isLight = document.body.classList.contains('light-mode');
+    document.getElementById('themeIcon').textContent = isLight ? '🌙' : '☀️';
+    document.getElementById('themeLabel').textContent = isLight ? 'Dark Mode' : 'Light Mode';
+    showToast(isLight ? '☀️ Light mode activated' : '🌙 Dark mode activated', 'info', 1800);
+}
+
+/* ============================================
+   COPIED BUTTON EFFECT
+   ============================================ */
+function setCopied(btn, original) {
+    btn.textContent = '✅ Copied!';
+    btn.style.background = 'linear-gradient(180deg,#00c853,#00a040)';
+    btn.style.color = '#fff';
+    setTimeout(() => {
+        btn.textContent = original;
+        btn.style.background = '';
+        btn.style.color = '';
+    }, 2000);
+}
+
+/* ============================================
+   TEAM SELECTOR
+   ============================================ */
+function showTeam(team, btn) {
+    document.getElementById('selectorScreen').style.display = 'none';
+    if (team === 'pool') {
+        const app = document.getElementById('poolApp');
+        app.style.display = 'block';
+        app.classList.add('fade-in');
+    } else {
+        const app = document.getElementById('uccApp');
+        app.style.display = 'block';
+        app.classList.add('fade-in');
+        initUCC();
+    }
+}
+
+function goBack() {
+    document.getElementById('poolApp').style.display = 'none';
+    document.getElementById('uccApp').style.display = 'none';
+    const sel = document.getElementById('selectorScreen');
+    sel.style.display = 'flex';
+    sel.classList.add('fade-in');
+}
+
+/* ============================================
+   POOL LOGIC
+   ============================================ */
+const projectLinks = {
+    cc_churn: "https://confluence.ops.expertcity.com/spaces/CST/pages/596083487/Credit+Card+Churn+and+Monthly+Report+for+Credit+Card+and+PayPal+Failure",
+    cl_in_product: "https://confluence.ops.expertcity.com/spaces/CST/pages/958960834/Closed+Loop+NPS",
+    cl_post_purchase: "https://confluence.ops.expertcity.com/spaces/CST/pages/958960834/Closed+Loop+NPS",
+    awb: "https://confluence.ops.expertcity.com/spaces/CST/pages/596083481/ACTIVATED+WINBACK+AND+ACTIONABLE+RENEWAL+CASES",
+    adyen: "https://confluence.ops.expertcity.com/spaces/CST/pages/1021117379/Adyen+Migration",
+    ar_turnoff: "https://confluence.ops.expertcity.com/spaces/CST/pages/596083500/Auto-renewal+Turned+Off",
+    rnps: "https://confluence.ops.expertcity.com/spaces/CST/pages/770083496/rNPS+CASES+DETRACTORS+-+PASSIVE+-+PROMOTERS",
+    tnps: "https://confluence.ops.expertcity.com/spaces/CST/pages/815307457/TNPS+%E2%80%93+Terminated+for+Non-Payment",
+    inbound: "https://confluence.ops.expertcity.com/spaces/CST/pages/939432363/Inbound+Customer+Request+Billing+Inquiry+Customer+Request+Feature+Assistance"
+};
+
+document.getElementById("projectSelect").addEventListener("change", function() {
+    const icon = document.getElementById("projectInfo");
+    const selected = this.value;
+    if (projectLinks[selected]) {
+        icon.href = projectLinks[selected];
+        icon.style.display = "inline-block";
+    } else {
+        icon.href = "#";
+        icon.style.display = "none";
+    }
+});
+
+function copyForm(btn) {
+    let form = document.getElementById("notesForm");
+    let data = "";
+    for (let i = 0; i < form.elements.length; i++) {
+        let el = form.elements[i];
+        if (el.type !== "button" && el.type !== "submit") {
+            let label = el.getAttribute("data-label");
+            let value = el.value || "";
+            data += (label ? label + ": " : "") + value + "\n";
+        }
+    }
+    navigator.clipboard.writeText(data.trim()).then(() => {
+        setCopied(btn, 'Copy');
+        showToast('📋 Form data copied!', 'success');
+    });
+}
+
+function clearForm() {
+    document.getElementById("notesForm").reset();
+    document.getElementById("projectInfo").style.display = "none";
+    document.getElementById("projectInfo").href = "#";
+    showToast('🗑️ Form cleared.', 'info');
+}
+
+const fullPrompt = `# ✅ PROMPT1 – Account Hygiene (Stable Forensic v1.0)
+Act as a **Customer Success Agent performing Account Hygiene – Full Forensic Audit**.
+You will be provided with a Salesforce Account link or Account ID.
+**ENTER SALESFORCE LINK HERE**
+* * *
+# 🎯 OBJECTIVE
+Perform a complete Account Hygiene audit ensuring:
+* Accurate Contact retrieval
+* Capture of ALL structured phone numbers
+* Extraction of hidden phone numbers in Cases & Activities
+* Controlled website phone validation
+* Low-noise enrichment
+* Clean, structured Salesforce-ready output
+* * *
+# 🔎 SALESFORCE DATA RETRIEVAL
+## ✅ A. Account (Dynamic Phone Detection)
+* Retrieve ALL Account fields.
+* Extract ALL fields where:
+  * Field name contains "Phone"
+  * Field label contains "Phone"
+  * Field type is Phone
+Also retrieve:
+* Company Name
+* Website
+* Email-related fields
+* Description
+* MAH
+* Billing & Shipping Address
+* * *
+## ✅ B. Contact Retrieval (ACR-Aware)
+Retrieve Contacts using BOTH:
+1️⃣ Contact WHERE AccountId = [AccountId]
+2️⃣ AccountContactRelation WHERE AccountId = [AccountId]
+AND
+AccountContactRelation WHERE RelatedAccountId = [AccountId]
+Merge and deduplicate Contacts.
+For EACH Contact:
+* Retrieve ALL fields
+* Extract ALL phone-related fields dynamically
+Primary Contact Selection:
+* Must have Email
+* Prefer business-domain email
+* Prefer populated Phone
+* Avoid generic/"Unknown" records when possible
+If no Contacts exist, explicitly state so.
+* * *
+# ✅ C. CONDITIONAL CASE RETRIEVAL
+If Contacts exist:
+* Retrieve Cases tied to Primary Contact
+* PLUS 10 most recent additional Cases
+If no Contacts:
+* Retrieve ALL Cases
+* Limit to last 24 months if >50
+* * *
+# ✅ D. FULL FORENSIC CASE & ACTIVITY SCAN
+Scan for phone numbers in:
+* CaseComment
+* EmailMessage (TextBody + HtmlBody)
+* FeedItem
+* FeedTrackedChange
+* Note & ContentNote
+* Task (Call Logs)
+* Event
+* Case custom fields containing "Phone"
+* Long text fields
+Extract phone numbers from:
+* Email signatures
+* Call logs
+* Comments
+* Notes
+* Free text
+Normalize and deduplicate.
+* * *
+# ✅ E. WEBSITE REVIEW (3-LAYER CONTROLLED MODEL)
+If Website exists:
+🔹 Layer 1 – Static Extraction
+* Homepage
+* Contact page
+* About page
+* Footer
+* tel: links
+* Toll-free prefixes (800, 888, 877, 866, 855, 844, 833)
+Include only numbers visible on official site.
+🔹 Layer 2 – Reverse Validation (If Needed)
+If number visible but not captured:
+Search: "[Phone Number]" + "[Company Name]"
+Include only if:
+* Associated with official domain
+* Clearly tied to entity
+* Not directory-only
+* Not another company
+🔹 Layer 3 – Domain-Limited Sweep
+Search:
+site:[official-domain] "[area code]"
+site:[official-domain] "[toll-free prefix]"
+Include only if found on official domain pages.
+❌ No directory scraping
+❌ No broad "Company + phone" scraping
+❌ No address-based web search
+* * *
+# ✅ PHONE NORMALIZATION RULES
+* Format US numbers as: +1 (###) ###-####
+* Preserve international format where applicable
+* Deduplicate
+* Source-label
+* * *
+# ✅ OUTPUT FORMAT
+Title: Account Hygiene
+Contact Name:
+Email:
+Phone Numbers Found (all numbers found, deduplicated):
+Ph# 1 –
+Ph# 2 –
+Ph# 3 –
+Contact Outcome / Notes:
+(Brief summary of findings, data gaps, inconsistencies, risk flags, and recommended next action.)
+Website Reviewed: Yes / No / No – Access Error
+Cases Fully Scanned (CaseComment, EmailMessage, FeedItem, FeedTrackedChange, Note, ContentNote, Task, Event): Yes / No
+* * *
+✅ Stable for non-enterprise accounts
+✅ Low-noise enrichment
+✅ Dynamic phone-safe
+✅ ACR-aware
+✅ Reverse-validated website capture`;
+
+function generateAndCopy(btn) {
+    let link = document.getElementById("sfLink").value.trim();
+    if (!link) {
+        showToast('⚠️ Please paste the Salesforce Account link.', 'error');
+        return;
+    }
+    let finalScript = fullPrompt.replace("**ENTER SALESFORCE LINK HERE**", link);
+    navigator.clipboard.writeText(finalScript)
+        .then(() => {
+            setCopied(btn, 'Generate Full Script');
+            showToast('✅ Full Script copied! Ready to paste.', 'success');
+        })
+        .catch(() => showToast('⚠️ Copy failed. Please try manually.', 'error'));
+}
+
+function clearLink() {
+    document.getElementById("sfLink").value = "";
+    showToast('🗑️ Link cleared.', 'info');
+}
+
+/* ============================================
+   UCC LOGIC
+   ============================================ */
+let uccInitialized = false;
+
+function initUCC() {
+    if (uccInitialized) return;
+    uccInitialized = true;
+
+    const TEMPLATES = [{"key": "Inbound Customer request", "title": "Inbound Customer request", "fields": [{"id": "account", "label": "Name of the Account", "type": "text", "default": ""}, {"id": "product", "label": "Product", "type": "select", "options": ["GoToConnect", "GoToWebinar", "GoToMeeting", "GoToTraining", "Grasshopper", "OpenVoice"], "default": ""}, {"id": "arr", "label": "ARR", "type": "text", "default": ""}, {"id": "cust", "label": "Customer's Name & Email", "type": "text", "default": ""}, {"id": "super_admin", "label": "Super Admin", "type": "text", "default": "Yes"}, {"id": "case", "label": "Case#", "type": "text", "default": ""}, {"id": "escalated", "label": "Escalated To Another Team?", "type": "text", "default": ""}, {"id": "request", "label": "Request", "type": "textarea", "default": ""}, {"id": "steps", "label": "Steps taken", "type": "textarea", "default": ""}, {"id": "survey_bypass", "label": "Survey Bypass", "type": "select", "options": ["Yes", "No"], "default": ""}]}, {"key": "Account Payment Support", "title": "Account Payment Support", "fields": [{"id": "account", "label": "Account Name", "type": "text", "default": ""}, {"id": "be", "label": "BE", "type": "text", "default": ""}, {"id": "arr", "label": "ARR", "type": "text", "default": ""}, {"id": "product", "label": "Product", "type": "select", "options": ["GoToConnect", "GoToWebinar", "GoToMeeting", "GoToTraining", "Grasshopper", "OpenVoice"], "default": ""}, {"id": "super_admins", "label": "Super Admin(s)", "type": "text", "default": ""}, {"id": "billing_admins", "label": "Billing Admin(s)", "type": "text", "default": ""}, {"id": "ar_specialist", "label": "AR Specialist", "type": "text", "default": ""}, {"id": "callback", "label": "Call back number(s)", "type": "text", "default": ""}, {"id": "payment_method", "label": "Payment method", "type": "text", "default": ""}, {"id": "date_due", "label": "Date due", "type": "text", "default": ""}, {"id": "amount_due", "label": "Amount due", "type": "text", "default": ""}, {"id": "invoices", "label": "Invoice(s) due", "type": "text", "default": ""}, {"id": "call_result", "label": "Call result", "type": "textarea", "default": ""}, {"id": "survey_bypass", "label": "Survey Bypass", "type": "select", "options": ["Yes", "No"], "default": ""}]}, {"key": "rNPS Survey Response", "title": "rNPS Survey Response", "fields": [{"id": "account", "label": "Account", "type": "text", "default": ""}, {"id": "product", "label": "Product", "type": "select", "options": ["GoToConnect", "GoToWebinar", "GoToMeeting", "GoToTraining", "Grasshopper", "OpenVoice"], "default": ""}, {"id": "contact", "label": "Contact Name", "type": "text", "default": ""}, {"id": "callback", "label": "Callback number", "type": "text", "default": ""}, {"id": "rnpstype", "label": "rNPS Type", "type": "select", "options": ["Detractor", "Passive", "Promoter"], "default": ""}, {"id": "score", "label": "Survey score", "type": "text", "default": ""}, {"id": "reason", "label": "Reason", "type": "textarea", "default": ""}, {"id": "comments", "label": "Comments", "type": "textarea", "default": ""}, {"id": "survey_bypass", "label": "Survey Bypass", "type": "select", "options": ["Yes", "No"], "default": ""}]}, {"key": "UCC Add-on Closed", "title": "UCC Add-on Closed", "fields": [{"id": "account", "label": "Account", "type": "text", "default": ""}, {"id": "be", "label": "BE", "type": "text", "default": ""}, {"id": "product", "label": "Product", "type": "select", "options": ["GoToConnect", "GoToWebinar", "GoToMeeting", "GoToTraining", "Grasshopper", "OpenVoice"], "default": ""}, {"id": "super_admins", "label": "Super Admin(s)", "type": "text", "default": ""}, {"id": "oppty", "label": "Opportunity Name", "type": "text", "default": ""}, {"id": "addon", "label": "Add on/Product", "type": "text", "default": ""}, {"id": "arr", "label": "ARR: USD $", "type": "text", "default": "USD $"}, {"id": "comments", "label": "Comments", "type": "textarea", "default": ""}, {"id": "survey_bypass", "label": "Survey Bypass", "type": "select", "options": ["Yes", "No"], "default": ""}]}, {"key": "Gainsight Meeting Prep", "title": "Gainsight Meeting Prep", "fields": [{"id": "account", "label": "Account Name", "type": "text", "default": ""}, {"id": "be", "label": "Billing Entity", "type": "text", "default": ""}, {"id": "arr", "label": "ARR $", "type": "text", "default": ""}, {"id": "product", "label": "Product", "type": "select", "options": ["GoToConnect", "GoToWebinar", "GoToMeeting", "GoToTraining", "Grasshopper", "OpenVoice"], "default": ""}, {"id": "super_admin", "label": "Super Admin", "type": "text", "default": ""}, {"id": "custreq", "label": "Customer request", "type": "textarea", "default": ""}, {"id": "comments", "label": "Comments", "type": "textarea", "default": ""}, {"id": "campid", "label": "Camping ID", "type": "text", "default": ""}, {"id": "survey_bypass", "label": "Survey Bypass", "type": "select", "options": ["Yes", "No"], "default": ""}]}, {"key": "GTC Post Project/Setup CSM Intro", "title": "GTC Post Project/Setup CSM Intro", "fields": [{"id": "account", "label": "Name of the Account", "type": "text", "default": ""}, {"id": "be", "label": "BE", "type": "text", "default": ""}, {"id": "product", "label": "Product", "type": "select", "options": ["GoToConnect", "GoToWebinar", "GoToMeeting", "GoToTraining", "Grasshopper", "OpenVoice"], "default": ""}, {"id": "super_admin", "label": "Super Admin", "type": "text", "default": ""}, {"id": "arrband", "label": "ARR $1K-$25K?", "type": "text", "default": ""}, {"id": "partner", "label": "Partner (If applicable)", "type": "text", "default": ""}, {"id": "tier1", "label": "Does partner provides tier 1 support?", "type": "text", "default": ""}, {"id": "status", "label": "Project Status", "type": "select", "options": ["Completed", "On time", "Late"], "default": ""}, {"id": "enddate", "label": "Project end date", "type": "text", "default": ""}, {"id": "opencases", "label": "Open Cases", "type": "text", "default": ""}, {"id": "actions", "label": "Actions taken", "type": "textarea", "default": ""}, {"id": "survey_bypass", "label": "Survey Bypass", "type": "select", "options": ["Yes", "No"], "default": ""}]}, {"key": "GTC Mid-Life Review & Prep", "title": "GTC Mid-Life Review & Prep", "fields": [{"id": "account", "label": "Account", "type": "text", "default": "", "prefix": "• "}, {"id": "be", "label": "BE", "type": "text", "default": "", "prefix": "• "}, {"id": "arr", "label": "ARR (GTC / UCC): USD $", "type": "text", "default": "USD $", "prefix": "• "}, {"id": "contract_end", "label": "Contract End Date", "type": "text", "default": "", "prefix": "• "}, {"id": "key_settings", "label": "Key Settings in Admin Portal", "type": "text", "default": "", "prefix": "• "}, {"id": "super_admins", "label": "Super Admins", "type": "text", "default": "", "prefix": "• "}, {"id": "partner", "label": "Partner", "type": "text", "default": "", "prefix": "• "}, {"id": "open_cases", "label": "Open Billing/Support Cases", "type": "text", "default": "", "prefix": "• "}, {"id": "recent_cases", "label": "Recent Cases (last 2 months)", "type": "text", "default": "", "prefix": "• "}, {"id": "findings", "label": "Findings / Gaps / Opportunities", "type": "textarea", "default": "", "prefix": "• "}, {"id": "dq1", "label": "Discovery Question 1", "type": "textarea", "default": "How does GoToConnect fit into your overall communication strategy, and are there any areas where you feel it could do more?", "prefix": "• "}, {"id": "dq2", "label": "Discovery Question 2", "type": "textarea", "default": "Are there any specific goals or upcoming changes in your organization that GoToConnect could help support?", "prefix": "• "}, {"id": "health", "label": "Health Summary (if healthy)", "type": "textarea", "default": "• Account Setup: Fully configured and verified\n• Phone Numbers: Assigned and active\n• Licenses: Correctly assigned to all users\n• Dial Plan: Using schedules and auto attendants for proper call routing\n• Call Flow: Calls route to extensions and voicemail as expected\n• Permissions & Products: Updated in SF Account\n• Admin Portal: No misconfigurations detected\n• Usage: Features actively utilized by the organization\n• Support Status: No open cases; recent cases resolved successfully\n• Follow-up/Customer Engagement: Introductory email sent and assistance offered"}, {"id": "survey_bypass", "label": "Survey Bypass", "type": "select", "options": ["Yes", "No"], "default": ""}]}, {"key": "GTM Mid-Life Review & Prep", "title": "GTM Mid-Life Review & Prep", "fields": [{"id": "account", "label": "Account", "type": "text", "default": "", "prefix": "• "}, {"id": "be", "label": "BE", "type": "text", "default": "", "prefix": "• "}, {"id": "arr", "label": "What is the account's GTM ARR and total UCC ARR?", "type": "text", "default": "", "prefix": "• "}, {"id": "contract_end", "label": "Contract end date", "type": "text", "default": "", "prefix": "• "}, {"id": "seats", "label": "Assigned GTM seats", "type": "text", "default": "", "prefix": "• "}, {"id": "recent_meeting", "label": "Most recent Scheduled meeting", "type": "text", "default": "", "prefix": "• "}, {"id": "not_used", "label": "What GTM default settings are NOT being used in Admin Center", "type": "textarea", "default": "", "prefix": "• "}, {"id": "super_admins", "label": "Who are the super Admins", "type": "text", "default": "", "prefix": "• "}, {"id": "open_billing", "label": "Any open billing or support cases?", "type": "text", "default": "", "prefix": "• "}, {"id": "findings", "label": "What were your findings, the gap, and the potential benefit of fixing the issue(s) or the impact optimizing will have?", "type": "textarea", "default": "An email will be sent inviting them to book a meeting to learn about the features that can be enabled", "prefix": "• "}, {"id": "dq", "label": "Discovery questions (2)", "type": "textarea", "default": "1. Can you tell me about any challenges or limitations you've experienced when planning or running your Meetings?\n2. Are there features of GoTo Meeting you haven't explored yet but would be interested in learning more about to improve your sessions?", "prefix": "• "}, {"id": "healthy", "label": "If healthy, what was healthy about the account to validate your decision", "type": "textarea", "default": "• The account is Healthy since all of the GoTo Meetings seats are assigned.\n• Past Meetings were found during the last 90 days.\n• An email was sent to the customer inviting them to book a meeting with us - I also highlighted the benefits of using the other optional settings from Admin Center\n• The persona details were updated along with the products in SF", "prefix": "• "}, {"id": "survey_bypass", "label": "Survey Bypass", "type": "select", "options": ["Yes", "No"], "default": ""}]}, {"key": "GTW Mid-Life Review & Prep", "title": "GTW Mid-Life Review & Prep", "fields": [{"id": "account", "label": "Account", "type": "text", "default": "", "prefix": "• "}, {"id": "be", "label": "BE", "type": "text", "default": "", "prefix": "• "}, {"id": "arr", "label": "What is the account's GTW ARR and total UCC ARR?", "type": "text", "default": "", "prefix": "• "}, {"id": "contract_end", "label": "Contract end date", "type": "text", "default": "", "prefix": "• "}, {"id": "seats", "label": "Assigned GTW seats", "type": "text", "default": "", "prefix": "• "}, {"id": "webinars", "label": "Scheduled webinars over the last year", "type": "text", "default": "", "prefix": "• "}, {"id": "not_used", "label": "What GTW default settings are NOT being used in Admin Center", "type": "textarea", "default": "", "prefix": "• "}, {"id": "super_admins", "label": "Who are the super Admins", "type": "text", "default": "", "prefix": "• "}, {"id": "open_billing", "label": "Any open billing or support cases?", "type": "text", "default": "", "prefix": "• "}, {"id": "findings", "label": "What were your findings, the gap, and the potential benefit of fixing the issue(s) or the impact optimizing will have?", "type": "textarea", "default": "", "prefix": "• "}, {"id": "dq1", "label": "Discovery question 1", "type": "textarea", "default": "Can you tell me about any challenges or limitations you've experienced when planning or running your webinars?", "prefix": "• "}, {"id": "dq2", "label": "Discovery question 2", "type": "textarea", "default": "Are there features of GoTo Webinar you haven't explored yet but would be interested in learning more about to improve your sessions?", "prefix": "• "}, {"id": "survey_bypass", "label": "Survey Bypass", "type": "select", "options": ["Yes", "No"], "default": ""}]}, {"key": "UCC - CC Churn", "title": "UCC - CC Churn", "fields": [{"id": "attempt", "label": "Attempt number", "type": "select", "options": ["1", "2", "3", "4"], "default": ""}, {"id": "account", "label": "Account Name", "type": "text", "default": ""}, {"id": "be", "label": "BE/Billing ID", "type": "text", "default": ""}, {"id": "product", "label": "Product", "type": "select", "options": ["GoToConnect", "GoToWebinar", "GoToMeeting", "GoToTraining", "Grasshopper", "OpenVoice"], "default": ""}, {"id": "super_admin", "label": "Super Admin", "type": "text", "default": ""}, {"id": "callback", "label": "Call back number", "type": "text", "default": ""}, {"id": "last_meeting", "label": "Last Meeting", "type": "text", "default": ""}, {"id": "arr", "label": "ARR: USD $", "type": "text", "default": "USD $"}, {"id": "renewal", "label": "Renewal Date", "type": "text", "default": ""}, {"id": "amount_due", "label": "Amount Due: USD $", "type": "text", "default": "USD $"}, {"id": "payment_method", "label": "Payment method", "type": "text", "default": ""}, {"id": "call_result", "label": "Call Result", "type": "textarea", "default": ""}, {"id": "survey_bypass", "label": "Survey Bypass", "type": "select", "options": ["Yes", "No"], "default": ""}]}, {"key": "Post Cancel Usage / AWB", "title": "Post Cancel Usage / AWB", "fields": [{"id": "attempt", "label": "Attempt number", "type": "select", "options": ["1", "2", "3", "4"], "default": ""}, {"id": "account", "label": "Account Name", "type": "text", "default": ""}, {"id": "be", "label": "BE/Billing ID", "type": "text", "default": ""}, {"id": "product", "label": "Product", "type": "select", "options": ["GoToConnect", "GoToWebinar", "GoToMeeting", "GoToTraining", "Grasshopper", "OpenVoice"], "default": ""}, {"id": "super_admin", "label": "Super Admin", "type": "text", "default": ""}, {"id": "billing_admin", "label": "Billing Admin", "type": "text", "default": ""}, {"id": "callback", "label": "Callback number", "type": "text", "default": ""}, {"id": "arr", "label": "ARR: USD$", "type": "text", "default": "USD$"}, {"id": "renewal", "label": "Renewal Date", "type": "text", "default": ""}, {"id": "amount_due", "label": "Amount Due: USD $", "type": "text", "default": "USD $"}, {"id": "payment_method", "label": "Payment method", "type": "text", "default": ""}, {"id": "comments", "label": "Comments", "type": "textarea", "default": ""}, {"id": "survey_bypass", "label": "Survey Bypass", "type": "select", "options": ["Yes", "No"], "default": ""}]}, {"key": "Bounce Research", "title": "Bounce Research", "fields": [{"id": "account", "label": "Name of the Account", "type": "text", "default": ""}, {"id": "be", "label": "Billing Entity", "type": "text", "default": ""}, {"id": "product", "label": "Product", "type": "select", "options": ["GoToConnect", "GoToWebinar", "GoToMeeting", "GoToTraining", "Grasshopper", "OpenVoice"], "default": ""}, {"id": "bounce_reason", "label": "Bounce reason", "type": "text", "default": ""}, {"id": "email_campaign", "label": "Email campaign", "type": "text", "default": ""}, {"id": "contact", "label": "Contact name and email", "type": "text", "default": ""}, {"id": "super_admin", "label": "Super Admin", "type": "text", "default": ""}, {"id": "switched", "label": "Did you switch contact/persona? Yes/No", "type": "text", "default": ""}, {"id": "new_contact", "label": "New contact/persona", "type": "text", "default": ""}, {"id": "survey_bypass", "label": "Survey Bypass", "type": "select", "options": ["Yes", "No"], "default": ""}]}, {"key": "Embark Meeting", "title": "Embark Meeting", "fields": [{"id": "meeting_date", "label": "Meeting Date", "type": "text", "default": "", "prefix": "• "}, {"id": "meeting_time", "label": "Meeting Time", "type": "text", "default": "", "prefix": "• "}, {"id": "meeting_duration", "label": "Meeting Duration", "type": "text", "default": "", "prefix": "• "}, {"id": "prep_needed", "label": "Meeting Prep Needed?: Yes/No", "type": "text", "default": "", "prefix": "• "}, {"id": "time_spent", "label": "Time Spent", "type": "text", "default": "", "prefix": "• "}, {"id": "product", "label": "Product", "type": "select", "options": ["GoToConnect", "GoToWebinar", "GoToMeeting", "GoToTraining", "Grasshopper", "OpenVoice"], "default": "", "prefix": "• "}, {"id": "oh_type", "label": "OH Meeting Request Type", "type": "text", "default": "", "prefix": "• "}, {"id": "campaign_code", "label": "Campaign Code", "type": "text", "default": "", "prefix": "• "}, {"id": "no_show", "label": "No Show?: Yes/No", "type": "text", "default": "", "prefix": "• "}, {"id": "customer_name", "label": "Customer First & Last Name", "type": "text", "default": "", "prefix": "• "}, {"id": "email", "label": "Email Address", "type": "text", "default": "", "prefix": "• "}, {"id": "company", "label": "Company Name", "type": "text", "default": "", "prefix": "• "}, {"id": "account_arr", "label": "Account ARR (USD)", "type": "text", "default": "", "prefix": "• "}, {"id": "be_link", "label": "BE Salesforce Link", "type": "text", "default": "", "prefix": "• "}, {"id": "notes", "label": "Meeting Notes / Q&A (Enter Your Notes Here)", "type": "textarea", "default": ""}, {"id": "followup_needed", "label": "Customer Requests / Follow Up Needed", "type": "textarea", "default": ""}, {"id": "followup_email", "label": "Follow Up Email Requested?: Yes/No", "type": "text", "default": "", "prefix": "• "}, {"id": "lowlights", "label": "Lowlights / Challenges: Yes/No", "type": "text", "default": "", "prefix": "• "}, {"id": "survey_bypass", "label": "Survey Bypass", "type": "select", "options": ["Yes", "No"], "default": ""}]}, {"key": "TNPS", "title": "TNPS", "fields": [{"id": "attempt", "label": "Attempt number", "type": "select", "options": ["1", "2", "3", "4"], "default": ""}, {"id": "contact_name_date", "label": "Contact Name and Date", "type": "text", "default": ""}, {"id": "contact_email", "label": "Contact Email", "type": "text", "default": ""}, {"id": "contact_phone", "label": "Contact Phone", "type": "text", "default": ""}, {"id": "ticket", "label": "Ticket Number", "type": "text", "default": ""}, {"id": "product", "label": "Product", "type": "select", "options": ["GoToConnect", "GoToWebinar", "GoToMeeting", "GoToTraining", "Grasshopper", "OpenVoice"], "default": "GoToWebinar"}, {"id": "project_type", "label": "Type of Project", "type": "text", "default": ""}, {"id": "balance", "label": "Balance", "type": "text", "default": ""}, {"id": "outcome", "label": "Outcome of the Call", "type": "textarea", "default": ""}, {"id": "survey_bypass", "label": "Survey Bypass", "type": "select", "options": ["Yes", "No"], "default": ""}]}, {"key": "MTM to Year", "title": "MTM to Year", "fields": [{"id": "attempt", "label": "Attempt number", "type": "select", "options": ["1", "2", "3", "4"], "default": ""}, {"id": "case", "label": "Case", "type": "text", "default": ""}, {"id": "quote", "label": "Quote", "type": "text", "default": ""}, {"id": "account", "label": "Account name", "type": "text", "default": ""}, {"id": "contact", "label": "Contact", "type": "text", "default": ""}, {"id": "email", "label": "Email", "type": "text", "default": ""}, {"id": "phone", "label": "Phone number", "type": "text", "default": ""}, {"id": "setup", "label": "Current setup", "type": "textarea", "default": ""}, {"id": "seats", "label": "Total Seats", "type": "text", "default": ""}, {"id": "phone_numbers", "label": "Total Phone numbers", "type": "text", "default": ""}, {"id": "tollfree", "label": "Toll Free number", "type": "text", "default": ""}, {"id": "m_wo_tax", "label": "Total without taxes Monthly: $", "type": "text", "default": "$"}, {"id": "m_w_tax", "label": "Total with taxes Monthly: $", "type": "text", "default": "$"}, {"id": "tax", "label": "Total Tax: $", "type": "text", "default": "$"}, {"id": "y_wo_tax", "label": "Total without taxes yearly: $", "type": "text", "default": "$"}, {"id": "y_w_tax", "label": "Total with Taxes Yearly: $", "type": "text", "default": "$"}, {"id": "offer", "label": "12 months Offer", "type": "text", "default": ""}, {"id": "o_m_wo_tax", "label": "Total without taxes Monthly (Offer): $", "type": "text", "default": "$"}, {"id": "o_m_w_tax", "label": "Total with taxes Monthly (Offer): $", "type": "text", "default": "$"}, {"id": "o_y_wo_tax", "label": "Total yearly Without tax (Offer): $", "type": "text", "default": "$"}, {"id": "o_y_w_tax", "label": "Total with taxes Yearly (Offer): $", "type": "text", "default": "$"}, {"id": "m_save", "label": "Monthly Saving: $", "type": "text", "default": "$"}, {"id": "y_save", "label": "Yearly Savings: $", "type": "text", "default": "$"}, {"id": "comments", "label": "Comments", "type": "textarea", "default": ""}, {"id": "survey_bypass", "label": "Survey Bypass", "type": "select", "options": ["Yes", "No"], "default": ""}]}, {"key": "Adyen", "title": "Adyen", "fields": [{"id": "attempt", "label": "Attempt number", "type": "select", "options": ["1", "2", "3", "4"], "default": ""}, {"id": "account_id", "label": "Account ID", "type": "text", "default": ""}, {"id": "contact", "label": "Contact Name", "type": "text", "default": ""}, {"id": "email", "label": "Email Address", "type": "text", "default": ""}, {"id": "gh", "label": "Grasshopper Number", "type": "text", "default": ""}, {"id": "balance", "label": "Balance: $", "type": "text", "default": "$"}, {"id": "company", "label": "Company Name", "type": "text", "default": ""}, {"id": "arr", "label": "ARR: $", "type": "text", "default": "$"}, {"id": "outcome", "label": "Outcome", "type": "textarea", "default": ""}, {"id": "survey_bypass", "label": "Survey Bypass", "type": "select", "options": ["Yes", "No"], "default": ""}]}];
+
+    const taskSelect = document.getElementById('taskSelect');
+    const formArea = document.getElementById('formArea');
+    const templateTitle = document.getElementById('templateTitle');
+    const output = document.getElementById('output');
+    const warn = document.getElementById('warn');
+    const hint = document.getElementById('hint');
+
+    function buildTaskDropdown(){
+        taskSelect.innerHTML='';
+        TEMPLATES.forEach(t=>{ const opt=document.createElement('option'); opt.value=t.key; opt.textContent=t.title; taskSelect.appendChild(opt); });
+    }
+    function makeSelect(options,value){
+        const el=document.createElement('select');
+        const empty=document.createElement('option'); empty.value=''; empty.textContent=''; el.appendChild(empty);
+        (options||[]).forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v; el.appendChild(o); });
+        el.value=value||''; return el;
+    }
+    function makeField(field){
+        const wrap=document.createElement('div');
+        const lab=document.createElement('label');
+        lab.textContent=(field.prefix||'')+field.label+':';
+        lab.setAttribute('for',field.id);
+        let el;
+        if(field.type==='select'){ el=makeSelect(field.options,field.default); }
+        else if(field.type==='textarea'){ el=document.createElement('textarea'); el.rows=4; el.value=field.default||''; }
+        else { el=document.createElement('input'); el.type='text'; el.value=field.default||''; }
+        el.id=field.id; el.name=field.id;
+        wrap.appendChild(lab); wrap.appendChild(el); return wrap;
+    }
+    function loadTemplate(key){
+        const t=TEMPLATES.find(x=>x.key===key)||TEMPLATES[0];
+        templateTitle.textContent=t.title;
+        formArea.innerHTML=''; warn.textContent='';
+        hint.innerHTML='• <b>Product</b> es dropdown en todos los campos "Product".<br>• <b>Survey Bypass</b> (Yes/No) aparece en todos los templates.<br>• <b>Embark Meeting</b> es un template separado de <b>Bounce Research</b>.';
+        const container=document.createElement('div');
+        container.className=(t.fields.length>=10)?'grid2':'';
+        t.fields.forEach(f=>container.appendChild(makeField(f)));
+        formArea.appendChild(container);
+    }
+    function getVal(id){ const el=document.getElementById(id); if(!el) return ''; return (el.value??'').toString().replace(/\r/g,'').trimEnd(); }
+    function getSalesforceLinkLine(){ const el=document.getElementById('sfLinkUCC'); const link=el?el.value.trim():''; if(!link) return ''; return `Salesforce Account Link: ${link}`; }
+    function headerLines(title){ return [title,'----------------------------------------']; }
+
+    function generate(){
+        const key=taskSelect.value;
+        const t=TEMPLATES.find(x=>x.key===key);
+        if(!t) return;
+        const lines=[];
+        lines.push(...headerLines(t.title));
+        t.fields.forEach(f=>{ const v=getVal(f.id); const pref=f.prefix||''; if(pref) lines.push(`${pref}${f.label}: ${v}`); else lines.push(`${f.label}: ${v}`); });
+        const sfLine=getSalesforceLinkLine();
+        if(sfLine) lines.push(sfLine);
+        output.value=lines.join('\r\n');
+        const empties=t.fields.filter(f=>String(f.default||'')===''&&getVal(f.id).trim()==='').map(f=>f.label);
+        warn.textContent=empties.length?`Campos vacíos: ${empties.join(', ')}`:'';
+        showToast('📄 Formato generado.','info');
+    }
+    async function copyToClipboard(){
+        if(!output.value){ showToast('⚠️ Primero genera el formato.','error'); return; }
+        try{
+            await navigator.clipboard.writeText(output.value);
+            const btn=document.getElementById('btnCopy');
+            setCopied(btn,'Copiar');
+            showToast('📋 Copiado al portapapeles ✅','success');
+        } catch(e){ output.focus(); output.select(); document.execCommand('copy'); showToast('📋 Copiado (compatibilidad) ✅','success'); }
+    }
+    function resetFields(){
+        const key=taskSelect.value;
+        const t=TEMPLATES.find(x=>x.key===key);
+        if(!t) return;
+        t.fields.forEach(f=>{ const el=document.getElementById(f.id); if(!el) return; el.value=f.default||''; });
+        showToast('🗑️ Campos reiniciados.','info');
+    }
+    async function copyOutput(){
+        if(!output.value){ showToast('⚠️ No hay contenido para copiar.','error'); return; }
+        try{
+            await navigator.clipboard.writeText(output.value);
+            const btn=document.getElementById('btnCopyOutput');
+            setCopied(btn,'Copiar');
+            showToast('📋 Salida copiada ✅','success');
+        } catch(e){ output.focus(); output.select(); document.execCommand('copy'); showToast('📋 Copiado ✅','success'); }
+    }
+    function resetOutput(){ output.value=''; showToast('🗑️ Salida limpiada.','info'); }
+
+    const fullPromptUCC = fullPrompt;
+
+    function generateAndCopyUCC(){
+        const link=document.getElementById('sfLinkUCC').value.trim();
+        if(!link){ showToast('⚠️ Please paste a Salesforce Account link first.','error'); return; }
+        const finalScript=fullPromptUCC.replace('**ENTER SALESFORCE LINK HERE**',link);
+        const btn=document.getElementById('btnGeneratePrompt');
+        navigator.clipboard.writeText(finalScript)
+            .then(()=>{ setCopied(btn,'Generate Full Script'); showToast('✅ Full Script copied! Ready to paste.','success'); })
+            .catch(()=>showToast('⚠️ Copy failed. Please try manually.','error'));
+    }
+    function clearLinkUCC(){ document.getElementById('sfLinkUCC').value=''; showToast('🗑️ Link cleared.','info'); }
+
+    buildTaskDropdown();
+    loadTemplate(TEMPLATES[0].key);
+    taskSelect.addEventListener('change',(e)=>loadTemplate(e.target.value));
+    document.getElementById('btnGenerate').addEventListener('click', generate);
+    document.getElementById('btnCopy').addEventListener('click', copyToClipboard);
+    document.getElementById('btnClear').addEventListener('click', resetFields);
+    document.getElementById('btnGeneratePrompt').addEventListener('click', generateAndCopyUCC);
+    document.getElementById('btnClearLink').addEventListener('click', clearLinkUCC);
+    document.getElementById('btnCopyOutput').addEventListener('click', copyOutput);
+    document.getElementById('btnResetOutput').addEventListener('click', resetOutput);
+}
+</script>
+</body>
+</html>
