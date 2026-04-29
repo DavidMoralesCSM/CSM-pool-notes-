@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Customer Success Specialist </title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background-color: #121212;
+            color: #FFCC00;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+            background: linear-gradient(180deg, #1A1A1A 0%, #111 100%);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+        }
+        header h1 {
+            margin: 0;
+            font-size: 26px;
+            font-weight: 600;
+            color: #FFCC00;
+        }
+        .divider {
+            border-bottom: 1px solid rgba(255, 204, 0, 0.4);
+        }
+        form {
+            max-width: 650px;
+            margin: 40px auto;
+            background-color: #1E1E1E;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            backdrop-filter: blur(8px);
+        }
+        label {
+            display: block;
+            margin-top: 20px;
+            font-weight: 600;
+            color: #FFCC00;
+            font-size: 15px;
+        }
+        select, input, textarea {
+            width: 100%;
+            padding: 12px;
+            margin-top: 8px;
+            box-sizing: border-box;
+            border: 1px solid rgba(255, 204, 0, 0.4);
+            border-radius: 12px;
+            background-color: #2A2A2A;
+            color: #FFCC00;
+            font-size: 15px;
+            transition: all 0.25s ease;
+        }
+        select:focus, input:focus, textarea:focus {
+            outline: none;
+            border: 1px solid #FFCC00;
+            background-color: #262626;
+            box-shadow: 0 0 10px rgba(255,204,0,0.3);
+        }
+        textarea {
+            height: 90px;
+            resize: vertical;
+        }
+        button {
+            margin-top: 25px;
+            padding: 12px 20px;
+            font-weight: 600;
+            font-size: 15px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-copy {
+            background: linear-gradient(180deg, #FFCC00, #e6b800);
+            color: #1A1A1A;
+            box-shadow: 0 4px 12px rgba(255,204,0,0.4);
+        }
+        .btn-copy:hover {
+            background: linear-gradient(180deg, #FFD633, #e6b800);
+            box-shadow: 0 6px 16px rgba(255,204,0,0.5);
+        }
+        .btn-clear {
+            background-color: #2A2A2A;
+            color: #FFCC00;
+            margin-left: 12px;
+            border: 1px solid rgba(255, 204, 0, 0.4);
+        }
+        .btn-clear:hover {
+            background-color: #333;
+            border-color: #FFCC00;
+        }
+
+        /* ✅ Info icon style */
+        .info-icon {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            line-height: 18px;
+            text-align: center;
+            border-radius: 50%;
+            background: #FFCC00;
+            color: #1A1A1A;
+            font-size: 12px;
+            font-weight: bold;
+            text-decoration: none;
+            margin-left: 8px;
+            cursor: pointer;
+            vertical-align: middle;
+        }
+        .info-icon:hover {
+            background: #FFD633;
+            box-shadow: 0 0 8px rgba(255,204,0,0.6);
+        }
+
+        /* ✅ Project label + icon wrapper */
+        .project-label-wrapper {
+            display: flex;
+            align-items: center;
+            margin-top: 20px;
+        }
+        .project-label-wrapper label {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Customer Success Specialist </h1>
+    <img src="https://res.cloudinary.com/brandpad/image/upload/c_scale,dpr_auto,f_auto,w_768/v1/13080/goto_logo_wht_yellow" alt="GoTo" height="40">
+</header>
+<div class="divider"></div>
+<form id="notesForm">
+    <label>Attempt Stage:</label>
+    <select data-label="Attempt Stage">
+        <option>1ST ATTEMPT</option>
+        <option>2ND ATTEMPT</option>
+        <option>3RD ATTEMPT</option>
+        <option>4TH ATTEMPT</option>
+        <option>FOLLOW UP </option>
+    </select>
+
+    <label>Contact Name:</label>
+    <input type="text" data-label="Contact Name">
+
+    <label>Email:</label>
+    <input type="email" data-label="Email">
+
+    <label>Phone Number:</label>
+    <input type="tel" data-label="Phone Number">
+
+    <label>Product:</label>
+    <select data-label="Product">
+        <option>GoToAssist</option>
+        <option>GoToMyPC</option>
+        <option>PRO</option>
+        <option>Central</option>
+        <option>Resolve</option>
+        <option>Rescue</option>
+        <option>Hamachi</option>
+    </select>
+
+    <label>Recurring Revenue:</label>
+    <input type="text" data-label="Recurring Revenue">
+
+    <label>Renewal Date:</label>
+    <input type="date" data-label="Renewal Date">
+
+    <label>Last Usage:</label>
+    <input type="text" data-label="Last Usage">
+
+    <!-- ✅ Project label with dynamic "i" icon -->
+    <div class="project-label-wrapper">
+        <label>Project:</label>
+        <a id="projectInfo"
+           href="#"
+           target="_blank"
+           class="info-icon"
+           style="display:none;"
+           title="View project documentation">
+           i
+        </a>
+    </div>
+    <select data-label="Project" id="projectSelect">
+        <option value="">-- Select Project --</option>
+        <option value="cc_churn">CC churn</option>
+        <option value="cl_in_product">Closed Loop - In product</option>
+        <option value="cl_post_purchase">Closed Loop - Post Purchase</option>
+        <option value="awb">AWB</option>
+        <option value="adyen">Adyen Migration</option>
+        <option value="ar_turnoff">AR turn off</option>
+        <option value="rnps">rNPS</option>
+        <option value="tnps">tNPS</option>
+        <option value="inbound">Inbound Request</option>
+        <option value="meeting">Meeting</option>
+    </select>
+
+    <label>Account Hygiene Internal Admin:</label>
+    <input type="text" data-label="Account Hygiene Internal Admin">
+
+    <label>Account Hygiene AI/Additional findings:</label>
+    <textarea data-label="AI/Additional findings"></textarea>
+
+    <label>Contact Outcome/Notes:</label>
+    <textarea data-label="Contact Outcome/Notes"></textarea>
+
+    <button type="button" class="btn-copy" onclick="copyForm()">Copy</button>
+    <button type="button" class="btn-clear" onclick="clearForm()">Clear</button>
+</form>
+
+<!-- ✅ Salesforce Section -->
+<div style="max-width:650px; margin:20px auto; padding:0 30px;">
+    <hr style="border-color:rgba(255,204,0,0.4);">
+    <h3 style="color:#FFCC00;">🔗 Salesforce Account Link</h3>
+    <input type="text" id="sfLink" placeholder="Paste Salesforce Account Link Here"
+           style="width:100%; padding:12px; box-sizing:border-box;
+                  border:1px solid rgba(255,204,0,0.4); border-radius:12px;
+                  background-color:#2A2A2A; color:#FFCC00; font-size:15px;">
+    <br>
+    <button onclick="generateAndCopy()"
+            style="margin-top:15px; padding:12px 20px; font-weight:600; font-size:15px;
+                   border:none; border-radius:12px; cursor:pointer;
+                   background:linear-gradient(180deg,#FFCC00,#e6b800); color:#1A1A1A;
+                   box-shadow:0 4px 12px rgba(255,204,0,0.4);">
+        Generate Full Script
+    </button>
+    <button onclick="clearLink()"
+            style="margin-top:15px; margin-left:12px; padding:12px 20px; font-weight:600;
+                   font-size:15px; border:1px solid rgba(255,204,0,0.4); border-radius:12px;
+                   cursor:pointer; background-color:#2A2A2A; color:#FFCC00;">
+        Clear Link
+    </button>
+</div>
+
+<script>
+    /* ✅ Project links map */
+    const projectLinks = {
+        cc_churn: "https://confluence.ops.expertcity.com/spaces/CST/pages/596083487/Credit+Card+Churn+and+Monthly+Report+for+Credit+Card+and+PayPal+Failure",
+        cl_in_product: "https://confluence.ops.expertcity.com/spaces/CST/pages/958960834/Closed+Loop+NPS",
+        cl_post_purchase: "https://confluence.ops.expertcity.com/spaces/CST/pages/958960834/Closed+Loop+NPS",
+        awb: "https://confluence.ops.expertcity.com/spaces/CST/pages/596083481/ACTIVATED+WINBACK+AND+ACTIONABLE+RENEWAL+CASES",
+        adyen: "https://confluence.ops.expertcity.com/spaces/CST/pages/1021117379/Adyen+Migration",
+        ar_turnoff: "https://confluence.ops.expertcity.com/spaces/CST/pages/596083500/Auto-renewal+Turned+Off",
+        rnps: "https://confluence.ops.expertcity.com/spaces/CST/pages/770083496/rNPS+CASES+DETRACTORS+-+PASSIVE+-+PROMOTERS",
+        tnps: "https://confluence.ops.expertcity.com/spaces/CST/pages/815307457/TNPS+%E2%80%93+Terminated+for+Non-Payment",
+        inbound: "https://confluence.ops.expertcity.com/spaces/CST/pages/939432363/Inbound+Customer+Request+Billing+Inquiry+Customer+Request+Feature+Assistance"
+    };
+
+    /* ✅ Show/hide "i" icon dynamically per project */
+    document.getElementById("projectSelect").addEventListener("change", function() {
+        const icon = document.getElementById("projectInfo");
+        const selected = this.value;
+
+        if (projectLinks[selected]) {
+            icon.href = projectLinks[selected];
+            icon.style.display = "inline-block";
+        } else {
+            icon.href = "#";
+            icon.style.display = "none";
+        }
+    });
+
+    /* ✅ Copy form */
+    function copyForm() {
+        let form = document.getElementById("notesForm");
+        let data = "";
+        for (let i = 0; i < form.elements.length; i++) {
+            let el = form.elements[i];
+            if (el.type !== "button" && el.type !== "submit") {
+                let label = el.getAttribute("data-label");
+                let value = el.value || "";
+                data += (label ? label + ": " : "") + value + "\n";
+            }
+        }
+        navigator.clipboard.writeText(data.trim()).then(() => {
+            alert("Form data copied to clipboard!");
+        });
+    }
+
+    /* ✅ Clear form */
+    function clearForm() {
+        document.getElementById("notesForm").reset();
+        document.getElementById("projectInfo").style.display = "none";
+        document.getElementById("projectInfo").href = "#";
+    }
+
+    /* ✅ Full Stable Forensic Prompt v1.0 */
+    const fullPrompt = `# ✅ PROMPT1 – Account Hygiene (Stable Forensic v1.0)
+Act as a **Customer Success Agent performing Account Hygiene – Full Forensic Audit**.
+You will be provided with a Salesforce Account link or Account ID.
+**ENTER SALESFORCE LINK HERE**
+* * *
+# 🎯 OBJECTIVE
+Perform a complete Account Hygiene audit ensuring:
+* Accurate Contact retrieval
+* Capture of ALL structured phone numbers
+* Extraction of hidden phone numbers in Cases & Activities
+* Controlled website phone validation
+* Low-noise enrichment
+* Clean, structured Salesforce-ready output
+* * *
+# 🔎 SALESFORCE DATA RETRIEVAL
+## ✅ A. Account (Dynamic Phone Detection)
+* Retrieve ALL Account fields.
+* Extract ALL fields where:
+  * Field name contains "Phone"
+  * Field label contains "Phone"
+  * Field type is Phone
+Also retrieve:
+* Company Name
+* Website
+* Email-related fields
+* Description
+* MAH
+* Billing & Shipping Address
+* * *
+## ✅ B. Contact Retrieval (ACR-Aware)
+Retrieve Contacts using BOTH:
+1️⃣ Contact WHERE AccountId = [AccountId]
+2️⃣ AccountContactRelation WHERE AccountId = [AccountId]
+AND
+AccountContactRelation WHERE RelatedAccountId = [AccountId]
+Merge and deduplicate Contacts.
+For EACH Contact:
+* Retrieve ALL fields
+* Extract ALL phone-related fields dynamically
+Primary Contact Selection:
+* Must have Email
+* Prefer business-domain email
+* Prefer populated Phone
+* Avoid generic/"Unknown" records when possible
+If no Contacts exist, explicitly state so.
+* * *
+# ✅ C. CONDITIONAL CASE RETRIEVAL
+If Contacts exist:
+* Retrieve Cases tied to Primary Contact
+* PLUS 10 most recent additional Cases
+If no Contacts:
+* Retrieve ALL Cases
+* Limit to last 24 months if >50
+* * *
+# ✅ D. FULL FORENSIC CASE & ACTIVITY SCAN
+Scan for phone numbers in:
+* CaseComment
+* EmailMessage (TextBody + HtmlBody)
+* FeedItem
+* FeedTrackedChange
+* Note & ContentNote
+* Task (Call Logs)
+* Event
+* Case custom fields containing "Phone"
+* Long text fields
+Extract phone numbers from:
+* Email signatures
+* Call logs
+* Comments
+* Notes
+* Free text
+Normalize and deduplicate.
+* * *
+# ✅ E. WEBSITE REVIEW (3-LAYER CONTROLLED MODEL)
+If Website exists:
+🔹 Layer 1 – Static Extraction
+* Homepage
+* Contact page
+* About page
+* Footer
+* tel: links
+* Toll-free prefixes (800, 888, 877, 866, 855, 844, 833)
+Include only numbers visible on official site.
+🔹 Layer 2 – Reverse Validation (If Needed)
+If number visible but not captured:
+Search: "[Phone Number]" + "[Company Name]"
+Include only if:
+* Associated with official domain
+* Clearly tied to entity
+* Not directory-only
+* Not another company
+🔹 Layer 3 – Domain-Limited Sweep
+Search:
+site:[official-domain] "[area code]"
+site:[official-domain] "[toll-free prefix]"
+Include only if found on official domain pages.
+❌ No directory scraping
+❌ No broad "Company + phone" scraping
+❌ No address-based web search
+* * *
+# ✅ PHONE NORMALIZATION RULES
+* Format US numbers as: +1 (###) ###-####
+* Preserve international format where applicable
+* Deduplicate
+* Source-label
+* * *
+# ✅ OUTPUT FORMAT
+Title: Account Hygiene
+Contact Name:
+Email:
+Phone Numbers Found (all numbers found, deduplicated):
+Ph# 1 –
+Ph# 2 –
+Ph# 3 –
+Contact Outcome / Notes:
+(Brief summary of findings, data gaps, inconsistencies, risk flags, and recommended next action.)
+Website Reviewed: Yes / No / No – Access Error
+Cases Fully Scanned (CaseComment, EmailMessage, FeedItem, FeedTrackedChange, Note, ContentNote, Task, Event): Yes / No
+* * *
+✅ Stable for non-enterprise accounts
+✅ Low-noise enrichment
+✅ Dynamic phone-safe
+✅ ACR-aware
+✅ Reverse-validated website capture`;
+
+    /* ✅ Generate + Auto Copy */
+    function generateAndCopy() {
+        let link = document.getElementById("sfLink").value.trim();
+        if (!link) {
+            alert("Please paste the Salesforce Account link.");
+            return;
+        }
+        let finalScript = fullPrompt.replace("**ENTER SALESFORCE LINK HERE**", link);
+        navigator.clipboard.writeText(finalScript)
+            .then(() => {
+                alert("✅ Full Script copied! You can now paste it.");
+            })
+            .catch(() => {
+                alert("Copy failed. Please copy manually.");
+            });
+    }
+
+    /* ✅ Clear Link */
+    function clearLink() {
+        document.getElementById("sfLink").value = "";
+    }
+</script>
+
+</body>
+</html>
